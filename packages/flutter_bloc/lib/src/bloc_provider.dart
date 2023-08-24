@@ -1,5 +1,6 @@
 import 'package:bloc/bloc.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/src/bloc_listener.dart';
 import 'package:provider/provider.dart';
 import 'package:provider/single_child_widget.dart';
 
@@ -90,10 +91,15 @@ class BlocProvider<T extends StateStreamableSource<Object?>>
   /// ```
   static T of<T extends StateStreamableSource<Object?>>(
     BuildContext context, {
+    SearchCallback<T>? searchCallback,
     bool listen = false,
   }) {
     try {
-      return Provider.of<T>(context, listen: listen);
+      return Provider.of<T>(
+        context,
+        searchCallback: searchCallback,
+        listen: listen,
+      );
     } on ProviderNotFoundException catch (e) {
       if (e.valueType != T) rethrow;
       throw FlutterError(

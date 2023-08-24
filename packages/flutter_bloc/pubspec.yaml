@@ -7,6 +7,8 @@ homepage: https://bloclibrary.dev
 documentation: https://bloclibrary.dev/#/gettingstarted
 topics: [bloc, state-management]
 
+publish_to: none
+
 environment:
   sdk: ">=2.12.0 <4.0.0"
 
@@ -14,7 +16,11 @@ dependencies:
   bloc: ^8.1.1
   flutter:
     sdk: flutter
-  provider: ^6.0.0
+  provider:
+    git:
+      url: https://github.com/Ayad-Ben-Saliem/provider.git
+#      ref: master
+#  provider: ^6.0.0
 
 dev_dependencies:
   flutter_test:

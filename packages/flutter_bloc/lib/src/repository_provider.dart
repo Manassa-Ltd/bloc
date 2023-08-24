@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:flutter_bloc/src/bloc_listener.dart';
 import 'package:provider/provider.dart';
 
 /// {@template repository_provider}
@@ -56,9 +57,17 @@ class RepositoryProvider<T> extends Provider<T> {
 
   /// Method that allows widgets to access a repository instance as long as
   /// their `BuildContext` contains a [RepositoryProvider] instance.
-  static T of<T>(BuildContext context, {bool listen = false}) {
+  static T of<T>(
+    BuildContext context, {
+    SearchCallback<T>? searchCallback,
+    bool listen = false,
+  }) {
     try {
-      return Provider.of<T>(context, listen: listen);
+      return Provider.of<T>(
+        context,
+        searchCallback: searchCallback,
+        listen: listen,
+      );
     } on ProviderNotFoundException catch (e) {
       if (e.valueType != T) rethrow;
       throw FlutterError(

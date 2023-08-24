@@ -15,6 +15,11 @@ typedef BlocWidgetListener<S> = void Function(BuildContext context, S state);
 /// with the current `state`.
 typedef BlocListenerCondition<S> = bool Function(S previous, S current);
 
+/// Signature for the `searchCallback` function which takes the `value` and is
+/// responsible for returning a [bool] which means the `state` that user
+/// looking for.
+typedef SearchCallback<V> = bool Function(V value);
+
 /// {@template bloc_listener}
 /// Takes a [BlocWidgetListener] and an optional [bloc] and invokes
 /// the [listener] in response to `state` changes in the [bloc].
@@ -82,6 +87,7 @@ class BlocListener<B extends StateStreamable<S>, S>
     Key? key,
     B? bloc,
     BlocListenerCondition<S>? listenWhen,
+    SearchCallback<B>? searchCallback,
     Widget? child,
   }) : super(
           key: key,
@@ -89,6 +95,7 @@ class BlocListener<B extends StateStreamable<S>, S>
           listener: listener,
           bloc: bloc,
           listenWhen: listenWhen,
+          searchCallback: searchCallback,
         );
 }
 
@@ -108,6 +115,7 @@ abstract class BlocListenerBase<B extends StateStreamable<S>, S>
     this.bloc,
     this.child,
     this.listenWhen,
+    this.searchCallback,
   }) : super(key: key, child: child);
 
   /// The widget which will be rendered as a descendant of the
@@ -126,6 +134,9 @@ abstract class BlocListenerBase<B extends StateStreamable<S>, S>
   /// {@macro bloc_listener_listen_when}
   final BlocListenerCondition<S>? listenWhen;
 
+  /// {@macro bloc_listener_search_callback}
+  final SearchCallback<B>? searchCallback;
+
   @override
   SingleChildState<BlocListenerBase<B, S>> createState() =>
       _BlocListenerBaseState<B, S>();
@@ -140,7 +151,10 @@ class _BlocListenerBaseState<B extends StateStreamable<S>, S>
   @override
   void initState() {
     super.initState();
-    _bloc = widget.bloc ?? context.read<B>();
+    _bloc = widget.bloc ??
+        context.read<B>(
+          searchCallback: widget.searchCallback,
+        );
     _previousState = _bloc.state;
     _subscribe();
   }
@@ -148,7 +162,10 @@ class _BlocListenerBaseState<B extends StateStreamable<S>, S>
   @override
   void didUpdateWidget(BlocListenerBase<B, S> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final oldBloc = oldWidget.bloc ?? context.read<B>();
+    final oldBloc = oldWidget.bloc ??
+        context.read<B>(
+          searchCallback: widget.searchCallback,
+        );
     final currentBloc = widget.bloc ?? oldBloc;
     if (oldBloc != currentBloc) {
       if (_subscription != null) {
@@ -163,7 +180,10 @@ class _BlocListenerBaseState<B extends StateStreamable<S>, S>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final bloc = widget.bloc ?? context.read<B>();
+    final bloc = widget.bloc ??
+        context.read<B>(
+          searchCallback: widget.searchCallback,
+        );
     if (_bloc != bloc) {
       if (_subscription != null) {
         _unsubscribe();
@@ -183,7 +203,10 @@ class _BlocListenerBaseState<B extends StateStreamable<S>, S>
     if (widget.bloc == null) {
       // Trigger a rebuild if the bloc reference has changed.
       // See https://github.com/felangel/bloc/issues/2127.
-      context.select<B, bool>((bloc) => identical(_bloc, bloc));
+      context.select<B, bool>(
+        (bloc) => identical(_bloc, bloc),
+        searchCallback: widget.searchCallback,
+      );
     }
     return child!;
   }

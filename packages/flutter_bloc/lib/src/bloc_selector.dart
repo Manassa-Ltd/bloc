@@ -30,6 +30,7 @@ class BlocSelector<B extends StateStreamable<S>, S, T> extends StatefulWidget {
     required this.selector,
     required this.builder,
     Key? key,
+    this.searchCallback,
     this.bloc,
   }) : super(key: key);
 
@@ -50,6 +51,8 @@ class BlocSelector<B extends StateStreamable<S>, S, T> extends StatefulWidget {
   /// the current state.
   final BlocWidgetSelector<S, T> selector;
 
+  final SearchCallback<B>? searchCallback;
+
   @override
   State<BlocSelector<B, S, T>> createState() => _BlocSelectorState<B, S, T>();
 }
@@ -62,14 +65,20 @@ class _BlocSelectorState<B extends StateStreamable<S>, S, T>
   @override
   void initState() {
     super.initState();
-    _bloc = widget.bloc ?? context.read<B>();
+    _bloc = widget.bloc ??
+        context.read<B>(
+          searchCallback: widget.searchCallback,
+        );
     _state = widget.selector(_bloc.state);
   }
 
   @override
   void didUpdateWidget(BlocSelector<B, S, T> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final oldBloc = oldWidget.bloc ?? context.read<B>();
+    final oldBloc = oldWidget.bloc ??
+        context.read<B>(
+          searchCallback: widget.searchCallback,
+        );
     final currentBloc = widget.bloc ?? oldBloc;
     if (oldBloc != currentBloc) {
       _bloc = currentBloc;
@@ -80,7 +89,10 @@ class _BlocSelectorState<B extends StateStreamable<S>, S, T>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final bloc = widget.bloc ?? context.read<B>();
+    final bloc = widget.bloc ??
+        context.read<B>(
+          searchCallback: widget.searchCallback,
+        );
     if (_bloc != bloc) {
       _bloc = bloc;
       _state = widget.selector(_bloc.state);
@@ -92,10 +104,14 @@ class _BlocSelectorState<B extends StateStreamable<S>, S, T>
     if (widget.bloc == null) {
       // Trigger a rebuild if the bloc reference has changed.
       // See https://github.com/felangel/bloc/issues/2127.
-      context.select<B, bool>((bloc) => identical(_bloc, bloc));
+      context.select<B, bool>(
+        (bloc) => identical(_bloc, bloc),
+        searchCallback: widget.searchCallback,
+      );
     }
     return BlocListener<B, S>(
       bloc: _bloc,
+      searchCallback: widget.searchCallback,
       listener: (context, state) {
         final selectedState = widget.selector(state);
         if (_state != selectedState) setState(() => _state = selectedState);

@@ -65,6 +65,7 @@ class BlocConsumer<B extends StateStreamable<S>, S> extends StatefulWidget {
     required this.listener,
     Key? key,
     this.bloc,
+    this.searchCallback,
     this.buildWhen,
     this.listenWhen,
   }) : super(key: key);
@@ -73,6 +74,8 @@ class BlocConsumer<B extends StateStreamable<S>, S> extends StatefulWidget {
   /// If omitted, [BlocConsumer] will automatically perform a lookup using
   /// `BlocProvider` and the current `BuildContext`.
   final B? bloc;
+
+  final SearchCallback<B>? searchCallback;
 
   /// The [builder] function which will be invoked on each widget build.
   /// The [builder] takes the `BuildContext` and current `state` and
@@ -105,13 +108,19 @@ class _BlocConsumerState<B extends StateStreamable<S>, S>
   @override
   void initState() {
     super.initState();
-    _bloc = widget.bloc ?? context.read<B>();
+    _bloc = widget.bloc ??
+        context.read<B>(
+          searchCallback: widget.searchCallback,
+        );
   }
 
   @override
   void didUpdateWidget(BlocConsumer<B, S> oldWidget) {
     super.didUpdateWidget(oldWidget);
-    final oldBloc = oldWidget.bloc ?? context.read<B>();
+    final oldBloc = oldWidget.bloc ??
+        context.read<B>(
+          searchCallback: widget.searchCallback,
+        );
     final currentBloc = widget.bloc ?? oldBloc;
     if (oldBloc != currentBloc) _bloc = currentBloc;
   }
@@ -119,7 +128,10 @@ class _BlocConsumerState<B extends StateStreamable<S>, S>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final bloc = widget.bloc ?? context.read<B>();
+    final bloc = widget.bloc ??
+        context.read<B>(
+          searchCallback: widget.searchCallback,
+        );
     if (_bloc != bloc) _bloc = bloc;
   }
 
@@ -128,11 +140,15 @@ class _BlocConsumerState<B extends StateStreamable<S>, S>
     if (widget.bloc == null) {
       // Trigger a rebuild if the bloc reference has changed.
       // See https://github.com/felangel/bloc/issues/2127.
-      context.select<B, bool>((bloc) => identical(_bloc, bloc));
+      context.select<B, bool>(
+        (bloc) => identical(_bloc, bloc),
+        searchCallback: widget.searchCallback,
+      );
     }
     return BlocBuilder<B, S>(
       bloc: _bloc,
       builder: widget.builder,
+      searchCallback: widget.searchCallback,
       buildWhen: (previous, current) {
         if (widget.listenWhen?.call(previous, current) ?? true) {
           widget.listener(context, current);
